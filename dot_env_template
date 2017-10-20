@@ -1,0 +1,12 @@
+# Do not quote any strings here
+#
+# In git this file is named .env_template
+# but once deployed it will be named .env
+# This allows us to deliver an upgraded template in future versions
+# without overwritting the current file then merge the two.
+
+# These are to qualify the image name/path in docker-compose.yml
+# and should be tied to the release being deployed
+DTR=sla-dtr.sby.ibm.com
+ORG=gts-tia-sdad-sla-core-dev
+RELEASE=latest
