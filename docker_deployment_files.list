@@ -1,0 +1,12 @@
+# Files needed when initializing the docker container
+
+./docker-compose.yml
+./dot_env_template
+./sla_openldap_proxy.env_template
+./init_openldap_proxy.sh
+./encrypt_env_vars.sh
+./merge_env.sh
+./reconfig_openldap_proxy.sh
+./start_openldap_proxy.sh
+./stop_openldap_proxy.sh
+./status_openldap_proxy.sh

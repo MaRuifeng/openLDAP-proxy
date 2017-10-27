@@ -3,7 +3,7 @@
 FROM centos:7
 
 # Install the necessary packages for LDAP Proxy server
-RUN yum install openldap openldap-clients openldap-servers -y
+RUN yum install openldap openldap-clients openldap-servers openssl -y
 
 # Make necessary directories
 RUN mkdir -p /root/openldap_proxy && \
@@ -16,14 +16,16 @@ RUN mkdir -p /root/openldap_proxy && \
 RUN rm -rf /etc/openldap/slapd.d
 
 # Copy files to container
-COPY ./start.sh /root/openldap_proxy/start.sh
-COPY ./slapd.conf /root/openldap_proxy/tmp/slapd.conf
 COPY ./ldap.conf /etc/openldap/ldap.conf
+COPY ./slapd.conf /root/openldap_proxy/tmp/slapd.conf
+COPY ./secret.sh /root/secret.sh
+COPY ./docker-entrypoint.sh /root/openldap_proxy/docker-entrypoint.sh
 
 # Add execution permission
 RUN chmod 755 /root
-RUN chmod +x /root/openldap_proxy/start.sh
+RUN chmod +x /root/openldap_proxy/docker-entrypoint.sh && \
+	chmod +x /root/secret.sh
 
 # Entry point
-ENTRYPOINT ["/root/openldap_proxy/start.sh"]
+ENTRYPOINT ["/root/openldap_proxy/docker-entrypoint.sh"]
 
