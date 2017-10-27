@@ -121,9 +121,9 @@ export HOSTNAME=$(hostname)
 export MAC_ADDRESS=$(ip link | grep -A 1 eth0: | grep ether | awk -F' ' '{print $2}')
 docker-compose up -d
 
-# Run rake tasks
+# Encrypt secrets
+./encrypt_env_vars.sh
 
 # Status check
 docker ps
 docker-compose logs
-
