@@ -29,3 +29,7 @@ All secret value entries contained in the environment variable file are encrypte
    
 ## Contribution 
 Please raise merge request for any change. Do not directly push to master branch.
+
+## Authors
+* Ke Pi (kepi@sg.ibm.com)
+* Ruifeng Ma (ruifengm@sg.ibm.com)
