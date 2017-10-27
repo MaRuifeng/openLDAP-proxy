@@ -1,6 +1,6 @@
 sla_openldap_proxy:
-  # image: "${DTR}/${ORG}/sla-openldap-proxy:${RELEASE}"
-  image: sla_openldap_proxy:latest
+  image: "${DTR}/${ORG}/sla-openldap-proxy:${RELEASE}"
+  # image: sla_openldap_proxy:latest
   container_name: sla_openldap_proxy
   ports:
     - '389:389'
