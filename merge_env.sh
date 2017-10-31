@@ -80,7 +80,7 @@ do
 
 	if [[ ! -z $VALUE ]]
 	then
-		echo "Merging ${VARIABLE}=$VALUE"
+		echo "Merging ${VARIABLE}"
 		VALUE=$(perl -e "print quotemeta('$VALUE')")
 		#echo "Quoted VALUE = $VALUE"
 		# replace variables that are unset and commented out in the template
