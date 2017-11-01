@@ -46,6 +46,7 @@ ldap_root_pw_decrypted=$(/root/secret.sh -d -v "${LDAP_ROOT_PW}")
 ldap_root_pw_decrypted_escaped=$(escape_for_sed "${ldap_root_pw_decrypted}")
 sed -i -r -e "s/^[^#]*rootpw\s+\".*\"/rootpw \"${ldap_root_pw_decrypted_escaped}\"/g" slapd.conf
 
+# LDAP server list
 for ix in {1..10}
 do
     ldap_hostname_key="LDAP_SERVER_HOSTNAME_$ix"
@@ -68,16 +69,6 @@ do
     ldap_idassert_bind_pw_value_decrypted_escaped=$(escape_for_sed "${ldap_idassert_bind_pw_value_decrypted}")
     ldap_rebind_as_user_key="LDAP_REBIND_AS_USER_$ix"
     ldap_rebind_as_user_value="${!ldap_rebind_as_user_key}"
-    ldap_attr_lastname_key="LDAP_ATTRIBUTE_MAPPING_LASTNAME_$ix"
-    ldap_attr_lastname_value="${!ldap_attr_lastname_key}"
-    ldap_attr_firstname_key="LDAP_ATTRIBUTE_MAPPING_FIRSTNAME_$ix"
-    ldap_attr_firstname_value="${!ldap_attr_firstname_key}"
-    ldap_attr_email_key="LDAP_ATTRIBUTE_MAPPING_EMAIL_$ix"
-    ldap_attr_email_value="${!ldap_attr_email_key}"
-    ldap_attr_uid_key="LDAP_ATTRIBUTE_MAPPING_UID_$ix"
-    ldap_attr_uid_value="${!ldap_attr_uid_key}"
-    ldap_attr_mobile_key="LDAP_ATTRIBUTE_MAPPING_MOBILE_NUMBER_$ix"
-    ldap_attr_mobile_value="${!ldap_attr_mobile_key}"
 
     if [[ ! -z ${ldap_ip_value:+x} ]] && [[ ! -z ${ldap_protocol_value:+x} ]] && [[ ! -z ${ldap_search_base_value:+x} ]]; then
     	echo -e "\n${ldap_ip_value}    ${ldap_hostname_value}" >> /etc/hosts
@@ -95,16 +86,33 @@ do
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
         fi
         sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
-
-        sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
-        [[ ! -z ${ldap_attr_lastname_value:+x} ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute lastName ${ldap_attr_lastname_value}" slapd.conf
-        [[ ! -z ${ldap_attr_firstname_value:+x} ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute firstName ${ldap_attr_firstname_value}" slapd.conf
-        [[ ! -z ${ldap_attr_email_value:+x} ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute email ${ldap_attr_email_value}" slapd.conf
-        [[ ! -z ${ldap_attr_uid_value:+x} ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute uid ${ldap_attr_uid_value}" slapd.conf
-        [[ ! -z ${ldap_attr_mobile_value:+x} ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute mobileNumber ${ldap_attr_mobile_value}" slapd.conf
-        sed -i -r -e 's/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/\n&/g' slapd.conf  # new line
     fi
 done
+
+# LDAP attribute mapping 
+sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
+while IFS='' read -r line || [[ -n "$line" ]]; do
+    var_key=${line%%=*}
+    ldap_attr_name=${var_key#LDAP_ATTRIBUTE_MAPPING_}
+    ldap_attr_value=${line#*=}
+    if [[ ${ldap_attr_value} =~ .*,.* ]]; then
+        IFS=',' read -ra attr_value_array <<< "${ldap_attr_value}" # change IFS for single command only
+        i=1
+        for val in ${attr_value_array[@]}
+        do
+            if [[ val != '' ]]; then
+                val_escaped=$(escape_for_sed "${val}")
+                [[ $i -gt 1 ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
+                sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute ${ldap_attr_name} ${val_escaped}" slapd.conf
+                i=$(( i+1 ))
+            fi
+        done
+    else
+        ldap_attr_value_escaped=$(escape_for_sed "${ldap_attr_value}")
+        sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute ${ldap_attr_name} ${ldap_attr_value_escaped}" slapd.conf
+    fi
+done < <(env | grep LDAP_ATTRIBUTE_MAPPING)
+sed -i -r -e 's/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/\n&/g' slapd.conf  # new line
 
 cp slapd.conf /etc/openldap/slapd.conf
 

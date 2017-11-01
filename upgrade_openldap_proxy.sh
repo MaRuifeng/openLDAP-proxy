@@ -118,7 +118,8 @@ fi
 docker login -u ${DTR_USER} -p ${DTR_PASS} ${DTR_HOST}
 docker pull ${IMAGE_LOCATION}/sla-openldap-proxy:${RELEASE} # pull image explicitly
 export HOSTNAME=$(hostname)
-export MAC_ADDRESS=$(ip link | grep -A 1 eth0: | grep ether | awk -F' ' '{print $2}')
+export MAC_ADDRESS=${cat /root/.secure/mac_address} || export MAC_ADDRESS=$(ip link | grep -A 1 eth0: | grep ether | awk -F' ' '{print $2}')
+
 docker-compose up -d
 
 # Encrypt secrets
