@@ -16,8 +16,8 @@
 
 # ============= Build and push docker images (Start) ============= #
 DTR_HOST='sla-dtr.sby.ibm.com'
-DTR_ORG='dev-user'
-# DTR_ORG='gts-tia-sdad-sla-core-dev'
+# DTR_ORG='dev-user'
+DTR_ORG='gts-tia-sdad-sla-core-dev'
 DTR="${DTR_HOST}/${DTR_ORG}"
 
 cd $WORKSPACE

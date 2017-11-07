@@ -14,8 +14,8 @@
 
 
 export DTR_HOST='sla-dtr.sby.ibm.com'
-export DTR_DEV_ORG='dev-user'
-# export DTR_DEV_ORG='gts-tia-sdad-sla-core-dev'
+# export DTR_DEV_ORG='dev-user'
+export DTR_DEV_ORG='gts-tia-sdad-sla-core-dev'
 export DTR_PROD_ORG='gts-tia-sdad-sla-core'
 
 CUR_DIR=$(dirname $0)
