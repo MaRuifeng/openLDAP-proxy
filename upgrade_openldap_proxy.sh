@@ -22,7 +22,7 @@ CUR_DIR=$(dirname $0)
 cd "${CUR_DIR}" && CUR_DIR=$PWD
 [[ ! -d tmp ]] && mkdir tmp
 
-ops='dev,release:,dtr-user:,dtr-pass:'
+ops='dev,ucd,release:,dtr-user:,dtr-pass:'
 declare DEV_DEPLOY='false'
 declare UCD_DRIVEN='false'
 declare {RELEASE,DTR_USER,DTR_PASS}=''
