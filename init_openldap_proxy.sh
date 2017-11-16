@@ -67,8 +67,10 @@ done
 [[ "${DTR_PASS}" == '' ]] && (echo -e "\033[0;31mError: no DTR password specified! Check script usage.\033[0m\n$USAGE" && exit 1)
 
 if [[ "$DEV_DEPLOY" == 'true' ]]; then
+    DTR_ORG="${DTR_DEV_ORG}"
     IMAGE_LOCATION="${DTR_HOST}/${DTR_DEV_ORG}"
 else
+    DTR_ORG="${DTR_PROD_ORG}"
     IMAGE_LOCATION="${DTR_HOST}/${DTR_PROD_ORG}"
 fi
 
@@ -76,8 +78,9 @@ fi
 [[ ! -f .env ]] && (echo -e "\033[0;31mError: .env file NOT found in current directory "${CUR_DIR}". Please make sure it's configured.\033[0m" && exit 1)
 [[ ! -f sla_openldap_proxy.env ]] && (echo -e "\033[0;31mError: sla_openldap_proxy.env file NOT found in current directory "${CUR_DIR}". Please make sure it's configured.\033[0m" && exit 1)
 
-# Set release tag
+# Set release tag and DTR organization
 sed -i -e "s/.*RELEASE=.*/RELEASE=${RELEASE}/g" .env
+sed -i -e "s/.*ORG=.*/ORG=${DTR_ORG}/g" .env
 
 # Start up
 docker login -u ${DTR_USER} -p ${DTR_PASS} ${DTR_HOST}

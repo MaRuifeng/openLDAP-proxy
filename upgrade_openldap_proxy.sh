@@ -73,8 +73,10 @@ done
 [[ "${DTR_PASS}" == '' ]] && (echo -e "\033[0;31mError: no DTR password specified! Check script usage.\033[0m\n$USAGE" && exit 1)
 
 if [[ "$DEV_DEPLOY" == 'true' ]]; then
+    DTR_ORG="${DTR_DEV_ORG}"
     IMAGE_LOCATION="${DTR_HOST}/${DTR_DEV_ORG}"
 else
+    DTR_ORG="${DTR_PROD_ORG}"
     IMAGE_LOCATION="${DTR_HOST}/${DTR_PROD_ORG}"
 fi
 
@@ -90,8 +92,9 @@ else
     echo -e "\033[0;31mError: No merge_env.sh script is found in current directory "${CUR_DIR}". Aborted.\033[0m" && exit 1
 fi
 
-# Set release tag
+# Set release tag and DTR organization
 sed -i -e "s/.*RELEASE=.*/RELEASE=${RELEASE}/g" .env
+sed -i -e "s/.*ORG=.*/ORG=${DTR_ORG}/g" .env
 
 if [[ $(docker ps -a | grep "\sla_openldap_proxy\b$" | wc -l) -eq 1 ]]; then
     while true
