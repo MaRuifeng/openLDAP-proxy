@@ -13,5 +13,5 @@ sla_openldap_proxy:
   environment:
     - "DOCKER_HOST_FQDN=${HOSTNAME}"
     - "DOCKER_HOST_MAC=${MAC_ADDRESS}"
-  command: bash -l -c "cd /root/openldap_proxy && exec /usr/sbin/slapd -h 'ldap:/// ldapi:/// ldaps:///' -g ldap -u ldap -d 2"
+  command: bash -l -c "cd /root/openldap_proxy && exec /usr/sbin/slapd -h 'ldap:/// ldapi:/// ldaps:///' -g ldap -u ldap -d 256"
 
