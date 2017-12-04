@@ -3,8 +3,9 @@ sla_openldap_proxy:
   # image: sla_openldap_proxy:latest
   container_name: sla_openldap_proxy
   restart: always
+  hostname: ${HOSTNAME}
   ports:
-    - '389:389'
+    - "389:389"
     - "636:636"
   volumes:
     - open-ldap-proxy-data:/root/openldap_proxy/data
@@ -12,5 +13,5 @@ sla_openldap_proxy:
   environment:
     - "DOCKER_HOST_FQDN=${HOSTNAME}"
     - "DOCKER_HOST_MAC=${MAC_ADDRESS}"
-  command: bash -l -c "cd /root/openldap_proxy && /usr/sbin/slapd -h 'ldap:/// ldapi:/// ldaps:///' -g ldap -u ldap -d 2"
+  command: bash -l -c "cd /root/openldap_proxy && exec /usr/sbin/slapd -h 'ldap:/// ldapi:/// ldaps:///' -g ldap -u ldap -d 2"
 
