@@ -17,7 +17,7 @@ RUN rm -rf /etc/openldap/slapd.d
 
 # Copy files to container
 COPY ./ldap.conf /etc/openldap/ldap.conf
-COPY ./slapd.conf /root/openldap_proxy/tmp/slapd.conf
+COPY ./slapd.conf /root/openldap_proxy/tmp/slapd.conf_template
 COPY ./secret.sh /root/secret.sh
 COPY ./docker-entrypoint.sh /root/openldap_proxy/docker-entrypoint.sh
 
