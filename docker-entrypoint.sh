@@ -39,6 +39,8 @@ eval $APP_GEN_CERT
 
 # Update the slapd.conf file
 cd /root/openldap_proxy/tmp
+rm -rf slapd.conf
+cp slapd.conf_template slapd.conf
 
 sed -i -r -e "s/^[^#]*suffix\s+\".*\"/suffix \"${LDAP_SUFFIX}\"/g" slapd.conf
 sed -i -r -e "s/^[^#]*rootdn\s+\".*\"/rootdn \"${LDAP_ROOT_DN}\"/g" slapd.conf
