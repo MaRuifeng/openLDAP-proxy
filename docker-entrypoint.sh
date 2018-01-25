@@ -91,8 +91,8 @@ do
     fi
 done
 
-# LDAP attribute mapping 
-sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
+# LDAP attribute/objectClass mapping 
+sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
 while IFS='' read -r line || [[ -n "$line" ]]; do
     var_key=${line%%=*}
     ldap_attr_name=${var_key#LDAP_ATTRIBUTE_MAPPING_}
@@ -104,17 +104,39 @@ while IFS='' read -r line || [[ -n "$line" ]]; do
         do
             if [[ val != '' ]]; then
                 val_escaped=$(escape_for_sed "${val}")
-                [[ $i -gt 1 ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
-                sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute ${ldap_attr_name} ${val_escaped}" slapd.conf
+                [[ $i -gt 1 ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
+                sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i rwm-map attribute ${ldap_attr_name} ${val_escaped}" slapd.conf
                 i=$(( i+1 ))
             fi
         done
     else
         ldap_attr_value_escaped=$(escape_for_sed "${ldap_attr_value}")
-        sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/ i rwm-map attribute ${ldap_attr_name} ${ldap_attr_value_escaped}" slapd.conf
+        sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i rwm-map attribute ${ldap_attr_name} ${ldap_attr_value_escaped}" slapd.conf
     fi
 done < <(env | grep LDAP_ATTRIBUTE_MAPPING)
-sed -i -r -e 's/#+\s+LDAP_ATTRIBUTE_MAPPING\s+END\s+#+/\n&/g' slapd.conf  # new line
+
+while IFS='' read -r line || [[ -n "$line" ]]; do
+    var_key=${line%%=*}
+    ldap_objclass_name=${var_key#LDAP_OBJECTCLASS_MAPPING_}
+    ldap_objclass_value=${line#*=}
+    if [[ ${ldap_objclass_value} =~ .*,.* ]]; then
+        IFS=',' read -ra objclass_value_array <<< "${ldap_objclass_value}" # change IFS for single command only
+        i=1
+        for val in ${objclass_value_array[@]}
+        do
+            if [[ val != '' ]]; then
+                val_escaped=$(escape_for_sed "${val}")
+                [[ $i -gt 1 ]] && sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i overlay rwm" slapd.conf
+                sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i rwm-map objectClass ${ldap_objclass_name} ${val_escaped}" slapd.conf
+                i=$(( i+1 ))
+            fi
+        done
+    else
+        ldap_objclass_value_escaped=$(escape_for_sed "${ldap_objclass_value}")
+        sed -i -r -e "/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/ i rwm-map objectClass ${ldap_objclass_name} ${ldap_objclass_value_escaped}" slapd.conf
+    fi
+done < <(env | grep LDAP_OBJECTCLASS_MAPPING)
+sed -i -r -e 's/#+\s+LDAP_ATTRIBUTE_OBJECTCLASS_MAPPING\s+END\s+#+/\n&/g' slapd.conf  # new line
 
 cp slapd.conf /etc/openldap/slapd.conf
 
