@@ -106,7 +106,7 @@ do
         # LDAP rewrite rules
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteEngine on" slapd.conf
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteContext searchResult" slapd.conf # This is to ensure the returned dn values by the proxy
-                                                                                                    # are exactly the same as those from the orignal LDAP servers
+                                                                                                    # are exactly the same as those from the original LDAP servers
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteRule \"(.*)${LDAP_SUFFIX}(.*)\" \"%1${ldap_search_base_value}%2\" \":\"" slapd.conf
 
         sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
