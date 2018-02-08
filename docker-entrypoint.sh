@@ -87,7 +87,7 @@ do
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-authzFrom \"${ldap_idassert_authzFrom_value}\"" slapd.conf
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
         fi
-        # LDAP attribute/objectClass mapping
+        # LDAP attribute mapping
         while IFS='' read -r line || [[ -n "$line" ]]; do
             var_key=${line%%=*}
             ldap_attr_name=${var_key#LDAP_ATTRIBUTE_MAPPING_${ix}_}
@@ -95,7 +95,7 @@ do
             ldap_attr_value_escaped=$(escape_for_sed "${ldap_attr_value}")
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map attribute ${ldap_attr_name} ${ldap_attr_value_escaped}" slapd.conf
         done < <(env | grep LDAP_ATTRIBUTE_MAPPING_${ix}_)
-
+        # LDAP objectClass mapping
         while IFS='' read -r line || [[ -n "$line" ]]; do
             var_key=${line%%=*}
             ldap_objclass_name=${var_key#LDAP_OBJECTCLASS_MAPPING_${ix}_}
@@ -103,6 +103,11 @@ do
             ldap_objclass_value_escaped=$(escape_for_sed "${ldap_objclass_value}")
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map objectClass ${ldap_objclass_name} ${ldap_objclass_value_escaped}" slapd.conf
         done < <(env | grep LDAP_OBJECTCLASS_MAPPING_${ix}_)
+        # LDAP rewrite rules
+        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteEngine on" slapd.conf
+        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteContext searchResult" slapd.conf # This is to ensure the returned dn values by the proxy
+                                                                                                    # are exactly the same as those from the original LDAP servers
+        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteRule \"(.*)${LDAP_SUFFIX}(.*)\" \"%1${ldap_search_base_value}%2\" \":\"" slapd.conf
 
         sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
     fi
