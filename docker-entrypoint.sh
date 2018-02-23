@@ -112,6 +112,8 @@ do
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map objectClass ${ldap_objclass_name} ${ldap_objclass_value_escaped}" slapd.conf
         done < <(env | grep LDAP_USER_OBJECTCLASS_MAPPING_${ix}_)
         sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
+        # Overall re-write rules for LDAP user
+        sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteRule \"(.*)${ldap_user_search_base_value}(.*)\" \"\$1${LDAP_SUFFIX}\$2\" \":\"" slapd.conf
         ## ----- USER Config (End) ----- ##
 
         ## ----- GROUP Config (Start) ----- ##
@@ -150,13 +152,10 @@ do
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteContext searchFilterAttrDN" slapd.conf
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteRule \"(.*)${LDAP_SUFFIX}(.*)\" \"%1${ldap_user_search_base_value}%2\" \":\"" slapd.conf # Enables group search via customized user dn 
             sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
+            # Overall re-write rules for LDAP group
+            sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteRule \"(.*)${ldap_group_search_base_value}(.*)\" \"\$1${LDAP_SUFFIX}\$2\" \":\"" slapd.conf
         fi
         ## ----- GROUP Config (End) ----- ##
-
-        ## ----- Overall re-write rules (Start) ----- ##
-        sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteRule \"(.*)${ldap_user_search_base_value}(.*)\" \"\$1${LDAP_SUFFIX}\$2\" \":\"" slapd.conf  
-        sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteRule \"(.*)${ldap_group_search_base_value}(.*)\" \"\$1${LDAP_SUFFIX}\$2\" \":\"" slapd.conf
-        ## ----- Overall re-write rules (End) ----- ##
     fi
 done
 
