@@ -48,6 +48,11 @@ ldap_root_pw_decrypted=$(/root/secret.sh -d -v "${LDAP_ROOT_PW}")
 ldap_root_pw_decrypted_escaped=$(escape_for_sed "${ldap_root_pw_decrypted}")
 sed -i -r -e "s/^[^#]*rootpw\s+\".*\"/rootpw \"${ldap_root_pw_decrypted_escaped}\"/g" slapd.conf
 
+# Add overall re-write overlay for DN and DN-syntax attribute values
+sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i overlay rwm" slapd.conf
+sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteEngine on" slapd.conf 
+sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteContext searchAttrDN" slapd.conf 
+
 # LDAP server list
 for ix in {1..10}
 do
@@ -59,8 +64,10 @@ do
     ldap_port_value="${!ldap_port_key}"
     ldap_protocol_key="LDAP_PROTOCOL_$ix"
     ldap_protocol_value="${!ldap_protocol_key}"
-    ldap_search_base_key="LDAP_SEARCH_BASE_$ix"
-    ldap_search_base_value="${!ldap_search_base_key}"
+    ldap_user_search_base_key="LDAP_USER_SEARCH_BASE_$ix"
+    ldap_user_search_base_value="${!ldap_user_search_base_key}"
+    ldap_group_search_base_key="LDAP_GROUP_SEARCH_BASE_$ix"
+    ldap_group_search_base_value="${!ldap_group_search_base_key}"
     ldap_anonymous_bind_key="LDAP_ANONYMOUS_BIND_$ix"
     ldap_anonymous_bind_value="${!ldap_anonymous_bind_key}"
     ldap_idassert_bind_dn_key="LDAP_IDASSERT_BIND_DN_$ix"
@@ -72,12 +79,13 @@ do
     ldap_rebind_as_user_key="LDAP_REBIND_AS_USER_$ix"
     ldap_rebind_as_user_value="${!ldap_rebind_as_user_key}"
 
-    if [[ ! -z ${ldap_ip_value:+x} ]] && [[ ! -z ${ldap_protocol_value:+x} ]] && [[ ! -z ${ldap_search_base_value:+x} ]]; then
+    if [[ ! -z ${ldap_ip_value:+x} ]] && [[ ! -z ${ldap_protocol_value:+x} ]] && [[ ! -z ${ldap_user_search_base_value:+x} ]]; then
     	echo -e "\n${ldap_ip_value}    ${ldap_hostname_value}" >> /etc/hosts
+        ## ----- USER Config (Start) ----- ##
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i uri \"${ldap_protocol_value}:\/\/${ldap_hostname_value}:${ldap_port_value}\/${LDAP_SUFFIX}\"" slapd.conf
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i lastmod off" slapd.conf
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i readonly yes" slapd.conf
-        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${LDAP_SUFFIX}\" \"${ldap_search_base_value}\"" slapd.conf
+        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${LDAP_SUFFIX}\" \"${ldap_user_search_base_value}\"" slapd.conf
         if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
             [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
             [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
@@ -87,29 +95,68 @@ do
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-authzFrom \"${ldap_idassert_authzFrom_value}\"" slapd.conf
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
         fi
-        # LDAP attribute mapping
+        # LDAP user attribute mapping
         while IFS='' read -r line || [[ -n "$line" ]]; do
             var_key=${line%%=*}
-            ldap_attr_name=${var_key#LDAP_ATTRIBUTE_MAPPING_${ix}_}
+            ldap_attr_name=${var_key#LDAP_USER_ATTRIBUTE_MAPPING_${ix}_}
             ldap_attr_value=${line#*=}
             ldap_attr_value_escaped=$(escape_for_sed "${ldap_attr_value}")
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map attribute ${ldap_attr_name} ${ldap_attr_value_escaped}" slapd.conf
-        done < <(env | grep LDAP_ATTRIBUTE_MAPPING_${ix}_)
-        # LDAP objectClass mapping
+        done < <(env | grep LDAP_USER_ATTRIBUTE_MAPPING_${ix}_)
+        # LDAP user objectClass mapping
         while IFS='' read -r line || [[ -n "$line" ]]; do
             var_key=${line%%=*}
-            ldap_objclass_name=${var_key#LDAP_OBJECTCLASS_MAPPING_${ix}_}
+            ldap_objclass_name=${var_key#LDAP_USER_OBJECTCLASS_MAPPING_${ix}_}
             ldap_objclass_value=${line#*=}
             ldap_objclass_value_escaped=$(escape_for_sed "${ldap_objclass_value}")
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map objectClass ${ldap_objclass_name} ${ldap_objclass_value_escaped}" slapd.conf
-        done < <(env | grep LDAP_OBJECTCLASS_MAPPING_${ix}_)
-        # LDAP rewrite rules
-        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteEngine on" slapd.conf
-        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteContext searchResult" slapd.conf # This is to ensure the returned dn values by the proxy
-                                                                                                    # are exactly the same as those from the original LDAP servers
-        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteRule \"(.*)${LDAP_SUFFIX}(.*)\" \"%1${ldap_search_base_value}%2\" \":\"" slapd.conf
-
+        done < <(env | grep LDAP_USER_OBJECTCLASS_MAPPING_${ix}_)
         sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
+        ## ----- USER Config (End) ----- ##
+
+        ## ----- GROUP Config (Start) ----- ##
+        if [[ ! -z ${ldap_group_search_base_value:+x} ]]; then
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i uri \"${ldap_protocol_value}:\/\/${ldap_hostname_value}:${ldap_port_value}\/${LDAP_SUFFIX}\"" slapd.conf
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i lastmod off" slapd.conf
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i readonly yes" slapd.conf
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${LDAP_SUFFIX}\" \"${ldap_group_search_base_value}\"" slapd.conf
+            if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
+                [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
+                [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
+                ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none flags=non-prescriptive"
+                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-bind ${ldap_idassert_bind_value}" slapd.conf
+                ldap_idassert_authzFrom_value="dn.exact:${ldap_idassert_bind_dn_value}"
+                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-authzFrom \"${ldap_idassert_authzFrom_value}\"" slapd.conf
+                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
+            fi
+            # LDAP group attribute mapping
+            while IFS='' read -r line || [[ -n "$line" ]]; do
+                var_key=${line%%=*}
+                ldap_attr_name=${var_key#LDAP_GROUP_ATTRIBUTE_MAPPING_${ix}_}
+                ldap_attr_value=${line#*=}
+                ldap_attr_value_escaped=$(escape_for_sed "${ldap_attr_value}")
+                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map attribute ${ldap_attr_name} ${ldap_attr_value_escaped}" slapd.conf
+            done < <(env | grep LDAP_GROUP_ATTRIBUTE_MAPPING_${ix}_)
+            # LDAP group objectClass mapping
+            while IFS='' read -r line || [[ -n "$line" ]]; do
+                var_key=${line%%=*}
+                ldap_objclass_name=${var_key#LDAP_GROUP_OBJECTCLASS_MAPPING_${ix}_}
+                ldap_objclass_value=${line#*=}
+                ldap_objclass_value_escaped=$(escape_for_sed "${ldap_objclass_value}")
+                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map objectClass ${ldap_objclass_name} ${ldap_objclass_value_escaped}" slapd.conf
+            done < <(env | grep LDAP_GROUP_OBJECTCLASS_MAPPING_${ix}_)
+            # LDAP group re-write rules
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteEngine on" slapd.conf
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteContext searchFilterAttrDN" slapd.conf
+            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rewriteRule \"(.*)${LDAP_SUFFIX}(.*)\" \"%1${ldap_user_search_base_value}%2\" \":\"" slapd.conf # Enables group search via customized user dn 
+            sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
+        fi
+        ## ----- GROUP Config (End) ----- ##
+
+        ## ----- Overall re-write rules (Start) ----- ##
+        sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteRule \"(.*)${ldap_user_search_base_value}(.*)\" \"\$1${LDAP_SUFFIX}\$2\" \":\"" slapd.conf  
+        sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteRule \"(.*)${ldap_group_search_base_value}(.*)\" \"\$1${LDAP_SUFFIX}\$2\" \":\"" slapd.conf
+        ## ----- Overall re-write rules (End) ----- ##
     fi
 done
 
