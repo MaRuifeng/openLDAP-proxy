@@ -92,9 +92,11 @@ do
         if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
             [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
             [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
-            ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none flags=non-prescriptive"
+            # ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none flags=non-prescriptive"
+            ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none"
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-bind ${ldap_idassert_bind_value}" slapd.conf
-            ldap_idassert_authzFrom_value="dn.exact:${ldap_idassert_bind_dn_value}"
+            # ldap_idassert_authzFrom_value="dn.exact:${ldap_idassert_bind_dn_value}"
+            ldap_idassert_authzFrom_value="dn.regex:.*"
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-authzFrom \"${ldap_idassert_authzFrom_value}\"" slapd.conf
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
         fi
@@ -114,24 +116,28 @@ do
             ldap_objclass_value_escaped=$(escape_for_sed "${ldap_objclass_value}")
             sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i map objectClass ${ldap_objclass_name} ${ldap_objclass_value_escaped}" slapd.conf
         done < <(env | grep LDAP_USER_OBJECTCLASS_MAPPING_${ix}_)
-        sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
         ## ----- USER Config (End) ----- ##
 
         ## ----- GROUP Config (Start) ----- ##
         if [[ ! -z ${ldap_group_search_base_value:+x} ]]; then
-            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i uri \"${ldap_protocol_value}:\/\/${ldap_hostname_value}:${ldap_port_value}\/${ldap_suffix_massaged}\"" slapd.conf
-            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i lastmod off" slapd.conf
-            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i readonly yes" slapd.conf
-            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${ldap_suffix_massaged}\" \"${ldap_group_search_base_value}\"" slapd.conf
-            if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
-                [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
-                [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
-                ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none flags=non-prescriptive"
-                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-bind ${ldap_idassert_bind_value}" slapd.conf
-                ldap_idassert_authzFrom_value="dn.exact:${ldap_idassert_bind_dn_value}"
-                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-authzFrom \"${ldap_idassert_authzFrom_value}\"" slapd.conf
-                sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
-            fi
+        	if [[ "${ldap_group_search_base_value}" != "${ldap_user_search_base_value}" ]]; then
+        		sed -i -r -e 's/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/\n&/g' slapd.conf  # new line
+	        	sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i uri \"${ldap_protocol_value}:\/\/${ldap_hostname_value}:${ldap_port_value}\/${ldap_suffix_massaged}\"" slapd.conf
+	            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i lastmod off" slapd.conf
+	            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i readonly yes" slapd.conf
+	            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${ldap_suffix_massaged}\" \"${ldap_group_search_base_value}\"" slapd.conf
+		        if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
+		            [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
+		            [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
+		            # ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none flags=non-prescriptive"
+		            ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none"
+		            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-bind ${ldap_idassert_bind_value}" slapd.conf
+		            # ldap_idassert_authzFrom_value="dn.exact:${ldap_idassert_bind_dn_value}"
+		            ldap_idassert_authzFrom_value="dn.regex:.*"
+		            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i idassert-authzFrom \"${ldap_idassert_authzFrom_value}\"" slapd.conf
+		            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i rebind-as-user ${ldap_rebind_as_user_value}" slapd.conf
+		        fi
+        	fi
             # LDAP group attribute mapping
             while IFS='' read -r line || [[ -n "$line" ]]; do
                 var_key=${line%%=*}
