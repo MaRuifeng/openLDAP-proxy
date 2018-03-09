@@ -53,6 +53,9 @@ sed -i -r -e "s/^[^#]*rootpw\s+\".*\"/rootpw \"${ldap_root_pw_decrypted_escaped}
 # sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteEngine on" slapd.conf 
 # sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteContext searchAttrDN" slapd.conf 
 
+# Add access control
+sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+START\s+#+/ i access to dn.regex=".*,${LDAP_SUFFIX}" attrs=entry,children,uid,mail,sn,givenName,cn,member by * read" slapd.conf
+
 # LDAP server list
 for ix in {1..50}
 do
