@@ -53,6 +53,9 @@ sed -i -r -e "s/^[^#]*rootpw\s+\".*\"/rootpw \"${ldap_root_pw_decrypted_escaped}
 # sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteEngine on" slapd.conf 
 # sed -i -r -e "/#+\s+LDAP_REWRITE_OVERLAY\s+END\s+#+/ i rwm-rewriteContext searchAttrDN" slapd.conf 
 
+# Add access control
+# sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+START\s+#+/ i access to dn.regex=".*,${LDAP_SUFFIX}" attrs=entry,children,uid,mail,sn,givenName,cn,member by * read" slapd.conf
+
 # LDAP server list
 for ix in {1..50}
 do
@@ -89,6 +92,7 @@ do
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i lastmod off" slapd.conf
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i readonly yes" slapd.conf
         sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${ldap_suffix_massaged}\" \"${ldap_user_search_base_value}\"" slapd.conf
+        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i chase-referrals YES" slapd.conf
         if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
             [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
             [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
@@ -126,7 +130,8 @@ do
 	            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i lastmod off" slapd.conf
 	            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i readonly yes" slapd.conf
 	            sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i suffixmassage \"${ldap_suffix_massaged}\" \"${ldap_group_search_base_value}\"" slapd.conf
-		        if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
+		        sed -i -r -e "/#+\s+LDAP_SERVER_ENTRY\s+END\s+#+/ i chase-referrals YES" slapd.conf
+                if [[ ! -z ${ldap_anonymous_bind_value:+x} ]] && [[ "$ldap_anonymous_bind_value" = no ]] &&\
 		            [[ ! -z ${ldap_idassert_bind_dn_value:+x} ]] && [[ ! -z ${ldap_idassert_bind_pw_value_decrypted_escaped:+x} ]] &&\
 		            [[ ! -z ${ldap_rebind_as_user_value:+x} ]]; then
 		            # ldap_idassert_bind_value="bindmethod=simple binddn=\"${ldap_idassert_bind_dn_value}\" credentials=\"${ldap_idassert_bind_pw_value_decrypted_escaped}\" mode=none flags=non-prescriptive"
