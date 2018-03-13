@@ -22,7 +22,7 @@ DTR="${DTR_HOST}/${DTR_ORG}"
 
 cd $WORKSPACE
 # Build required docker images
-docker login -u dev-user -p ${DTRDevPass} $DTR_HOST
+docker login -u sla-build -p ${DTRPass} $DTR_HOST
 
 echo -e "Building OpenLDAP Proxy image ..."
 cd ./openLDAP-proxy/
@@ -31,7 +31,7 @@ docker tag sla-openldap-proxy $DTR/sla-openldap-proxy:$BUILD_VERSION
 cd $WORKSPACE
 
 # Push to DTR
-docker login -u dev-user -p ${DTRDevPass} $DTR_HOST
+docker login -u sla-build -p ${DTRPass} $DTR_HOST
 docker push $DTR/sla-openldap-proxy:$BUILD_VERSION
 # ============= Build and push docker images (End) ============= #
 
