@@ -61,7 +61,12 @@ if [[ "${ENCRYPT}" == 'true' ]]; then
 fi
 
 if [[ "${DECRYPT}" == 'true' ]]; then
-    openssl aes-128-ecb -base64 -A -nosalt -k "${KEY}" -d -in <(echo -n "${VALUE}") || echo -n "${VALUE}"
+    DECRYPTED_VALUE=$(openssl aes-128-ecb -base64 -A -nosalt -k "${KEY}" -d -in <(echo -n "${VALUE}") 2>/dev/null) || BAD_DECRYPT='true'
+    if [[ "${BAD_DECRYPT}" == 'true' ]]; then
+        echo -n "${VALUE}"
+    else
+        echo -n "${DECRYPTED_VALUE}"
+    fi
 fi
 
 
