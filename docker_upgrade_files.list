@@ -12,3 +12,4 @@
 ./start_openldap_proxy.sh
 ./stop_openldap_proxy.sh
 ./status_openldap_proxy.sh
+./verify_openldap_proxy.sh
