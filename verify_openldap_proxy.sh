@@ -25,7 +25,7 @@ export BLUE_TXT_BEG='\033[0;36m'
 export TXT_END='\033[0m'
 
 # Check LDAP utility package installation (Fedora RHEL distribution assumed)
-# sudo yum list installed | grep openldap-clients || sudo yum install -y openldap-clients 
+sudo yum list installed | grep openldap-clients || sudo yum install -y openldap-clients 
 
 # Obtain and validate user input
 echo -e "${GREEN_TXT_BEG}#### Welcome to the openLDAP proxy verification process"'!'"####\nPlease enter below information.\nHit enter to leave empty if not applicable.${TXT_END}"
