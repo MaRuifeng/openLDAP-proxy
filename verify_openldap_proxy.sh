@@ -25,7 +25,7 @@ export BLUE_TXT_BEG='\033[0;36m'
 export TXT_END='\033[0m'
 
 # Check LDAP utility package installation (Fedora RHEL distribution assumed)
-sudo yum list installed | grep openldap-clients || sudo yum install -y openldap-clients 
+# sudo yum list installed | grep openldap-clients || sudo yum install -y openldap-clients 
 
 # Obtain and validate user input
 echo -e "${GREEN_TXT_BEG}#### Welcome to the openLDAP proxy verification process"'!'"####\nPlease enter below information.\nHit enter to leave empty if not applicable.${TXT_END}"
@@ -71,8 +71,9 @@ if [[ ! -z "$user_email" ]]; then
     echo -e "${BLUE_TXT_BEG}Searching user ${user_email} with mail...${TXT_END}"
     ldapsearch -h "$ldap_hostname" -x -b "$search_base" "mail=${user_email}" | grep numEntries || user_search_failed=true
 
+    uid=$(ldapsearch -h "$ldap_hostname" -x -b "$search_base" "mail=${user_email}" | egrep '^uid:.+' | awk '{print $2}' | head -n 1 )
     echo -e "${BLUE_TXT_BEG}Searching user ${user_email} with uid...${TXT_END}"
-    ldapsearch -h "$ldap_hostname" -x -b "$search_base" "uid=${user_email%%@*}" | grep numEntries || user_search_failed=true
+    ldapsearch -h "$ldap_hostname" -x -b "$search_base" "uid=${uid}" | grep numEntries || user_search_failed=true
 
     echo -e "${BLUE_TXT_BEG}Searching user ${user_email} with objectClass inetOrgPerson...${TXT_END}"
     ldapsearch -h "$ldap_hostname" -x -b "$search_base" "(&(|(objectClass=inetOrgPerson))(|(uid=${user_email%%@*})(mail=${user_email})))" | grep numEntries || user_search_failed=true
