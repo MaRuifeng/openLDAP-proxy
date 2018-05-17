@@ -122,7 +122,6 @@ fi
 
 # Start up
 if [[ "${NO_DTR}" == 'false' ]]; then
-    docker login -u ${DTR_USER} -p ${DTR_PASS} ${DTR_HOST}
     docker pull ${IMAGE_LOCATION}/sla-openldap-proxy:${RELEASE} # pull image explicitly
 fi # else assume image is already mannually loaded
 
