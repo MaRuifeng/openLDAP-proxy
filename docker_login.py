@@ -39,7 +39,7 @@ AUTHENTICATION_EMAIL = str(args.password)
 
 # COPY OVER ORIGINAL DOCKER CONFIG.JSON FILE
 sys.stdout.write('\nCopying over original config.json file')
-Original_Config_File = '/root/.docker/config.json'
+Original_Config_File = '~/.docker/config.json'
 Temp_config_file = '/tmp/config.json'
 shutil.copy(Original_Config_File, Temp_config_file)
 
