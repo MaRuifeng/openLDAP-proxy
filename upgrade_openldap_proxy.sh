@@ -22,11 +22,11 @@ CUR_DIR=$(dirname $0)
 cd "${CUR_DIR}" && CUR_DIR=$PWD
 [[ ! -d tmp ]] && mkdir tmp
 
-ops='dev,ucd,no-dtr,release:,dtr-user:,dtr-pass:'
+ops='dev,ucd,no-dtr,release:'
 declare {DEV_DEPLOY,UCD_DRIVEN,NO_DTR}='false'
-declare {RELEASE,DTR_USER,DTR_PASS}=''
+declare {RELEASE}=''
 
-USAGE="\n\033[0;36mUsage: $0 [--dev] [--ucd] [--no-dtr] [--release ivt_yyyymmdd-hhmm.###] [--dtr-user dtr_username] [--dtr-pass dtr_password]\033[0m\n"
+USAGE="\n\033[0;36mUsage: $0 [--dev] [--ucd] [--no-dtr] [--release ivt_yyyymmdd-hhmm.###]\033[0m\n"
 OPTIONS=$(getopt --options '' --longoptions ${ops} --name "$0" -- "$@")
 [[ $? != 0 ]] && exit 3
 
@@ -50,14 +50,6 @@ do
             RELEASE="$2"
             shift 2
             ;;
-        --dtr-user)
-            DTR_USER="$2"
-            shift 2
-            ;;
-        --dtr-pass)
-            DTR_PASS="$2"
-            shift 2
-            ;;
         --)
             shift
             break
@@ -72,8 +64,6 @@ do
 done
 
 [[ "${RELEASE}" == '' ]] && (echo -e "\033[0;31mError: no release tag specified! Check script usage.\033[0m\n$USAGE" && exit 1)
-[[ "${NO_DTR}" == 'false' && "${DTR_USER}" == '' ]] && (echo -e "\033[0;31mError: no DTR username specified! Check script usage.\033[0m\n$USAGE" && exit 1)
-[[ "${NO_DTR}" == 'false' && "${DTR_PASS}" == '' ]] && (echo -e "\033[0;31mError: no DTR password specified! Check script usage.\033[0m\n$USAGE" && exit 1)
 
 if [[ "$DEV_DEPLOY" == 'true' ]]; then
     DTR_ORG="${DTR_DEV_ORG}"
