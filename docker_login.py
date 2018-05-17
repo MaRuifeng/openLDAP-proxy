@@ -32,26 +32,31 @@ parser.add_argument("-p", "--password", type=str, help='The Intranet Password of
 args = parser.parse_args()
 
 # SET THE PARSED OPTIONS INTO VARIABLES
+sys.stdout.write('\nParsing given options')
 ARTIFACTORY_REPO = str(args.dtr_repo)
 AUTHENTICATION_TOKEN = str(args.user)
 AUTHENTICATION_EMAIL = str(args.password)
 
 # COPY OVER ORIGINAL DOCKER CONFIG.JSON FILE
+sys.stdout.write('\nCopying over original config.json file')
 Original_Config_File = '/root/.docker/config.json'
 Temp_config_file = '/tmp/config.json'
 shutil.copy(Original_Config_File, Temp_config_file)
 
 # GET DATA FROM THE CONFIG.JSON FILE AND UPDATE IT
+sys.stdout.write('\nGetting Data from File')
 data = Unicode_To_String(json.load(open(Temp_config_file)))
 AUTHENTICATION_URL = str("https://"+ARTIFACTORY_REPO)
 data['auths'][AUTHENTICATION_URL] = dict([("auth", AUTHENTICATION_TOKEN), ("email", AUTHENTICATION_EMAIL)])
 
 # CREATE FILE WITH UPDATED VALUES
+sys.stdout.write('\nCreating file with updated Authorization Credentials')
 os.remove(Temp_config_file)
 with open(Temp_config_file, 'wt') as outfile:
         outfile.write(PrintJSON(data))
 
 # SET ORIGINAL FILE WITH THE NEW ONE
+sys.stdout.write('\nUpdating Authorization Credentials in Original File')
 shutil.move(Temp_config_file, Original_Config_File)
 
 sys.exit(0)
