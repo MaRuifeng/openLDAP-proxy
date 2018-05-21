@@ -15,7 +15,7 @@
 
 
 # ============= Build and push docker images (Start) ============= #
-DTR_HOST='gts-sla-docker-local.artifactory.swg-devops.com'
+DTR_HOST='gts-tia-sla-docker-local.artifactory.swg-devops.com'
 # DTR_ORG='dev-user'
 DTR_ORG='gts-tia-sdad-sla-core-dev'
 DTR="${DTR_HOST}/${DTR_ORG}"
