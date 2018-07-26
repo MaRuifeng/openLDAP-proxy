@@ -1,5 +1,4 @@
 # Pull base image from authorized source
-# FROM sla-dtr.sby.ibm.com/gts-docker-library/centos:6.6_ibm_1
 FROM centos:7
 
 # Install the necessary packages for LDAP Proxy server
@@ -17,7 +16,7 @@ RUN rm -rf /etc/openldap/slapd.d
 
 # Copy files to container
 COPY ./ldap.conf /etc/openldap/ldap.conf
-COPY ./slapd.conf /root/openldap_proxy/tmp/slapd.conf
+COPY ./slapd.conf /root/openldap_proxy/tmp/slapd.conf_template
 COPY ./secret.sh /root/secret.sh
 COPY ./docker-entrypoint.sh /root/openldap_proxy/docker-entrypoint.sh
 

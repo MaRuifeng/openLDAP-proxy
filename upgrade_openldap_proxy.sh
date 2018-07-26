@@ -12,22 +12,20 @@
 # Author: ruifengm@sg.ibm.com
 # Date: 2017-Sep-19
 
-
-export DTR_HOST='sla-dtr.sby.ibm.com'
-# export DTR_DEV_ORG='dev-user'
-export DTR_DEV_ORG='gts-tia-sdad-sla-core-dev'
-export DTR_PROD_ORG='gts-tia-sdad-sla-core'
+# Replace below placeholders with acutal values
+export DTR_HOST='DTR_HOST'
+export DTR_DEV_ORG='DTR_DEV_ORG'
+export DTR_PROD_ORG='DTR_PROD_ORG'
 
 CUR_DIR=$(dirname $0)
 cd "${CUR_DIR}" && CUR_DIR=$PWD
 [[ ! -d tmp ]] && mkdir tmp
 
-ops='dev,release:,dtr-user:,dtr-pass:'
-declare DEV_DEPLOY='false'
-declare UCD_DRIVEN='false'
+ops='dev,ucd,no-dtr,release:,dtr-user:,dtr-pass:'
+declare {DEV_DEPLOY,UCD_DRIVEN,NO_DTR}='false'
 declare {RELEASE,DTR_USER,DTR_PASS}=''
 
-USAGE="\n\033[0;36mUsage: $0 [--dev] [--ucd] [--release ivt_yyyymmdd-hhmm.###] [--dtr-user dtr_username] [--dtr-pass dtr_password]\033[0m\n"
+USAGE="\n\033[0;36mUsage: $0 [--dev] [--ucd] [--no-dtr] [--release ivt_yyyymmdd-hhmm.###] [--dtr-user dtr_username] [--dtr-pass dtr_password]\033[0m\n"
 OPTIONS=$(getopt --options '' --longoptions ${ops} --name "$0" -- "$@")
 [[ $? != 0 ]] && exit 3
 
@@ -39,13 +37,13 @@ do
             DEV_DEPLOY='true'
             shift
             ;;
+        --no-dtr)
+            NO_DTR='true'
+            shift
+            ;;
         --ucd)
             UCD_DRIVEN='true'
             shift
-            ;;
-        --release)
-            RELEASE="$2"
-            shift 2
             ;;
         --dtr-user)
             DTR_USER="$2"
@@ -53,6 +51,10 @@ do
             ;;
         --dtr-pass)
             DTR_PASS="$2"
+            shift 2
+            ;;
+        --release)
+            RELEASE="$2"
             shift 2
             ;;
         --)
@@ -69,12 +71,14 @@ do
 done
 
 [[ "${RELEASE}" == '' ]] && (echo -e "\033[0;31mError: no release tag specified! Check script usage.\033[0m\n$USAGE" && exit 1)
-[[ "${DTR_USER}" == '' ]] && (echo -e "\033[0;31mError: no DTR username specified! Check script usage.\033[0m\n$USAGE" && exit 1)
-[[ "${DTR_PASS}" == '' ]] && (echo -e "\033[0;31mError: no DTR password specified! Check script usage.\033[0m\n$USAGE" && exit 1)
+[[ "${NO_DTR}" == 'false' && "${DTR_USER}" == '' ]] && (echo -e "\033[0;31mError: no DTR username specified! Check script usage.\033[0m\n$USAGE" && exit 1)
+[[ "${NO_DTR}" == 'false' && "${DTR_PASS}" == '' ]] && (echo -e "\033[0;31mError: no DTR password specified! Check script usage.\033[0m\n$USAGE" && exit 1)
 
 if [[ "$DEV_DEPLOY" == 'true' ]]; then
+    DTR_ORG="${DTR_DEV_ORG}"
     IMAGE_LOCATION="${DTR_HOST}/${DTR_DEV_ORG}"
 else
+    DTR_ORG="${DTR_PROD_ORG}"
     IMAGE_LOCATION="${DTR_HOST}/${DTR_PROD_ORG}"
 fi
 
@@ -90,8 +94,9 @@ else
     echo -e "\033[0;31mError: No merge_env.sh script is found in current directory "${CUR_DIR}". Aborted.\033[0m" && exit 1
 fi
 
-# Set release tag
+# Set release tag and DTR organization
 sed -i -e "s/.*RELEASE=.*/RELEASE=${RELEASE}/g" .env
+sed -i -e "s/.*ORG=.*/ORG=${DTR_ORG}/g" .env
 
 if [[ $(docker ps -a | grep "\sla_openldap_proxy\b$" | wc -l) -eq 1 ]]; then
     while true
@@ -115,10 +120,13 @@ if [[ $(docker ps -a | grep "\sla_openldap_proxy\b$" | wc -l) -eq 1 ]]; then
 fi
 
 # Start up
-docker login -u ${DTR_USER} -p ${DTR_PASS} ${DTR_HOST}
-docker pull ${IMAGE_LOCATION}/sla-openldap-proxy:${RELEASE} # pull image explicitly
+if [[ "${NO_DTR}" == 'false' ]]; then
+    docker login -u ${DTR_USER} -p ${DTR_PASS} ${DTR_HOST}
+    docker pull ${IMAGE_LOCATION}/sla-openldap-proxy:${RELEASE} # pull image explicitly
+fi # else assume image is already mannually loaded
+
 export HOSTNAME=$(hostname)
-export MAC_ADDRESS=${cat /root/.secure/mac_address} || export MAC_ADDRESS=$(ip link | grep -A 1 eth0: | grep ether | awk -F' ' '{print $2}')
+export MAC_ADDRESS=$(cat /root/.secure/mac_address) || export MAC_ADDRESS=$(ip link | grep -A 1 eth0: | grep ether | awk -F' ' '{print $2}')
 
 docker-compose up -d
 
