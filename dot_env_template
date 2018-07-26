@@ -7,6 +7,6 @@
 
 # These are to qualify the image name/path in docker-compose.yml
 # and should be tied to the release being deployed
-DTR=sla-dtr.sby.ibm.com
-ORG=gts-tia-sdad-sla-core-dev
-RELEASE=latest
+DTR=
+ORG=
+RELEASE=

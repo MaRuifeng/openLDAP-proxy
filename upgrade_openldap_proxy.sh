@@ -12,11 +12,10 @@
 # Author: ruifengm@sg.ibm.com
 # Date: 2017-Sep-19
 
-
-export DTR_HOST='sla-dtr.sby.ibm.com'
-# export DTR_DEV_ORG='dev-user'
-export DTR_DEV_ORG='gts-tia-sdad-sla-core-dev'
-export DTR_PROD_ORG='gts-tia-sdad-sla-core'
+# Replace below placeholders with acutal values
+export DTR_HOST='DTR_HOST'
+export DTR_DEV_ORG='DTR_DEV_ORG'
+export DTR_PROD_ORG='DTR_PROD_ORG'
 
 CUR_DIR=$(dirname $0)
 cd "${CUR_DIR}" && CUR_DIR=$PWD

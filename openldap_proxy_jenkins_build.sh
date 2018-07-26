@@ -15,9 +15,10 @@
 
 
 # ============= Build and push docker images (Start) ============= #
-DTR_HOST='gts-tia-sla-docker-local.artifactory.swg-devops.com'
-# DTR_ORG='dev-user'
-DTR_ORG='gts-tia-sdad-sla-core-dev'
+
+# Replace below placeholders with acutal values
+DTR_HOST='DTR_HOST'
+DTR_ORG='DTR_ORG'
 DTR="${DTR_HOST}/${DTR_ORG}"
 
 cd $WORKSPACE
