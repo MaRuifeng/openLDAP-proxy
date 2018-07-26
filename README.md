@@ -4,17 +4,17 @@ LDAP stands for Lightweight Directory Access Protocol, which is a lightweight pr
 
 Often there are applications whose user base consists of multiple LDAP sources, and some of them might even be of different nature (e.g. Linux LDAP vs. Windows AD). To ease the complexity of integrating multiple LDAP sources, it's better to provide a single unified interface with proper abstraction. That is where the idea of LDAP proxying comes into play. 
 
-Particularly in our use case at IBM, a bunch of enterprise customers have their own LDAP servers that render user/group management.  
+Particularly in our use case in IBM, a bunch of enterprise customers have their own LDAP servers that render user/group management. After federating them with our own identify provider (IBMid) to enable Single-Sign-On via the OAuth2 framework, we also need to query their LDAP servers for more detailed user/group information. This openLDAP proxy was created for that purpose.  
 
 The [slapd-meta](http://www.openldap.org/software/man.cgi?query=slapd-meta&apropos=0&sektion=0&manpath=OpenLDAP+2.4-Release&format=html) backend in the OpenLDAP software suite performs basic LDAP proxying with respect to a set of remote LDAP servers. This project is built upon it to provide a unified LDAP querying interface for multiple backend LDAP servers. 
 
 ## Development Setup
 
-It's handy to set up a local development environment to try out different config settings. Below sample commands are for Ubuntu environment. 
+It's handy to set up a local development environment to try out different config settings. Below sample commands are for an Ubuntu environment. 
 1. Install OpenLDAP: `sudo apt-get install slapd`
-2. Locate the [slpad.conf](https://www.openldap.org/doc/admin24/slapdconf2.html) file and edit it based on needs: `vim /etc/ldap/slapd.conf`
-3. Start the OpenLDAP Proxy service: `/usr/sbin/slapd -h 'ldap:/// ldapi:/// ldaps:///' -g openldap -u openldap -f /etc/ldap/slapd.conf -d 256`
-4. After OpenLDAP installation, there will be a default `openldap` process running if it's configured as start on server boot. It needs to be killed to start the new process. 
+2. Locate the [slpad.conf](https://www.openldap.org/doc/admin24/slapdconf2.html) file and edit it based on needs: `vim /etc/ldap/slapd.conf`. A sample file with `database meta` section configured is found in the source code. 
+3. Start the openLDAP proxy service: `/usr/sbin/slapd -h 'ldap:/// ldapi:/// ldaps:///' -g openldap -u openldap -f /etc/ldap/slapd.conf -d 256`
+4. After OpenLDAP installation, there will be a default `openldap` process running if it's configured as start on system boot. It needs to be killed to start the new process. 
 5. Install ldap-utils for client operations like LDAP query: `sudo apt-get install ldap-utils`
 6. Test the proxy (sample command only): `ldapsearch -h localhost -x -b "dc=sla,dc=ibm,dc=com" "mail=ruifengm@sg.ibm.com"`
 
@@ -29,15 +29,15 @@ Alternatively, development can be done via docker. Details are covered in below 
     
 ## Deployment
 
-To deploy the openLDAP proxy container, information of the backend LDAP servers need to be gathered and arranged into the `sla_openldap_proxy.env` environment variable file prior to starting the container. 
+To deploy the openLDAP proxy container, information of the backend LDAP servers needs to be gathered and arranged into the `sla_openldap_proxy.env` environment variable file prior to starting the container. 
 
 ### Proxy Config
 Set the `suffix`, `rootdn` and `rootpw` attributes in this section. The values will be populated into the `slapd.conf` file in the container. 
 
 ### LDAP Server List
-In this section, up to 10 LDAP server entries can be added. All variables for each LDAP entry need to be tagged with an incrementing number postfix for denote their uniqueness. Each customer account needs to be assigned with a short alphanumeric code that can be used to identify the account. 
+In this section, up to 10 LDAP server entries can be added. All variables for each LDAP entry need to be tagged with an incrementing number postfix for denote their uniqueness across different server entries. Each customer account needs to be assigned with a short alphanumeric code that can be used to identify the account. 
 
-Below is the proxy setting for a customer account `cobalt` that has 3 LDAP servers to serve its user base, one of which is a Windows AD server. 
+Below is the proxy setting for a customer account `cobalt` that has 3 LDAP servers as its user base, one of which is a Windows AD server. 
 
 ```
 LDAP_ACCOUNT_CODE_1=cobalt
@@ -118,8 +118,10 @@ LDAP_GROUP_SEARCH_BASE_4=dc=ad,dc=sla,dc=ibm,dc=com
 LDAP_GROUP_OBJECTCLASS_MAPPING_4_groupOfNames=group
 ```
 
-Once the environment viriable file is properly configured, the `init_openldap_proxy.sh` script can be run to start the container. 
+Once the environment viriable file is properly configured, run `docker-compose up -d` to start the container. 
 All secret value entries contained in the environment variable file are encrypted by running the `encrypt_env_vars.sh` script. The service container should be up to support the execution of this script. 
+
+Automated deployment scripts like `init_openldap_proxy.sh` etc. are also included. They are used in CI/CD pipelines where a Docker Trusted Registry is available to host the images. 
 
 ## Test and Usage
 
@@ -129,11 +131,11 @@ For example, with below settings,
 LDAP_SUFFIX=dc=sla,dc=ibm,dc=com
 LDAP_ACCOUNT_CODE_1=cobalt
 
-valid `ldapsearch` calls include `ldapsearch -h localhost -x -b "dc=cobalt,dc=sla,dc=ibm,dc=com" mail=-057mo897@tst.ibm.com` and `ldapsearch -h localhost -x -b "dc=sla,dc=ibm,dc=com" mail=-057mo897@tst.ibm.com`. 
+valid LDAP search calls include `ldapsearch -h localhost -x -b "dc=cobalt,dc=sla,dc=ibm,dc=com" mail=-057mo897@tst.ibm.com` and `ldapsearch -h localhost -x -b "dc=sla,dc=ibm,dc=com" mail=-057mo897@tst.ibm.com`. 
 
 The search base construction rule can be generalized as `dc=<value of LDAP_ACCOUNT_CODE_idx>,<value of LDAP_SUFFIX>`. 
 
-For automation purpose, the `verify_openldap_proxy.sh` script can be invoked to testing purpose. 
+The `verify_openldap_proxy.sh` script can be invoked for automated test and verification.
 
 The openLDAP proxy is an openLDAP server in nature hence it can be integrated into applications in the same way for LDAP servers. There are readily avaialbe LDAP connector libraries for most of the common languages. 
 
